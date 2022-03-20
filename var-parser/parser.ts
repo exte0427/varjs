@@ -58,16 +58,16 @@ export namespace parser {
 
     export class Token {
         type: TokenType;
-        value: string | number;
+        value: string;
 
-        constructor(type_: TokenType, value_: string | number) {
+        constructor(type_: TokenType, value_: string) {
             this.type = type_;
             this.value = value_;
         }
     }
 
     export const parse = (code: string) => {
-        let tokens: Array<Token> = [];
+        const tokens: Array<Token> = [];
 
         for (let i = 0; i < code.length; i++) {
 
@@ -260,7 +260,7 @@ export namespace parser {
 
                 tokens.push(new Token(TokenType.string_o, str));
             }
-            else if (!(code[i] === `\n` || code[i] === ` `))
+            else if (code[i] !== ` `)
                 tokens.push(new Token(TokenType.other, code[i]));
         }
 

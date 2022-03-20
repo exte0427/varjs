@@ -10,6 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node": "^17.0.21",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
     "prettier": "^2.6.0"
   }
 }
