@@ -277,10 +277,10 @@ namespace VarInternal {
             let myVar = target.var;
             myVar = getState(target);
 
-            if (excFir && myVar.Start !== null)
+            if (excFir && myVar.Start !== undefined)
                 myVar.Start();
 
-            if (myVar.update !== null)
+            if (myVar.Update !== undefined)
                 myVar.Update();
 
             let childList: Array<any> = myVar.Render().childList;
@@ -290,8 +290,8 @@ namespace VarInternal {
         }
 
         export const subVar = (target: Parser.VirtualDom): Parser.VirtualDom => {
-            if (target.var.name === "") {
-                const myTemplate = templates[target.tagName];
+            if (target.var === null || target.var === undefined) {
+                const myTemplate = tempClasses[target.tagName];
                 if (myTemplate === undefined)
                     return new Parser.VirtualDom(target.tagName, target.attributesList, target.childList.map(element => subVar(element)), target.value, target.key, target.var);
                 else {
@@ -299,9 +299,8 @@ namespace VarInternal {
                     return excute(new Parser.VirtualDom(target.tagName, target.attributesList, target.childList, target.value, target.key, myVar), true);
                 }
             }
-            else {
+            else
                 return excute(target, false);
-            }
         }
 
         export const detect = (parent: HTMLElement | Document, lastData: Parser.VirtualDom | undefined, nowData: Parser.VirtualDom | undefined, index: number): void => {
@@ -322,23 +321,23 @@ namespace VarInternal {
                 }
 
                 else if (lastData?.tagName !== nowData?.tagName) {
-                    changer.change(parent, target, <Parser.VirtualDom>nowData);
+                    changer.change(parent, target, nowData as Parser.VirtualDom);
                     return;
                 }
 
                 else if (lastData?.tagName === `text` && nowData?.tagName === `text` && lastData.value != nowData.value) {
-                    changer.change(parent, target, <Parser.VirtualDom>nowData);
+                    changer.change(parent, target, nowData as Parser.VirtualDom);
                     return;
                 }
 
                 else if (lastData?.tagName === nowData?.tagName && lastData?.tagName != `text`)
-                    changer.attrChange(target, <Array<Parser.VirtualState>>lastData?.attributesList, <Array<Parser.VirtualState>>nowData?.attributesList);
+                    changer.attrChange(target, lastData?.attributesList as Array<Parser.VirtualState>, nowData?.attributesList as Array<Parser.VirtualState>);
             }
-            const maxData: Array<Parser.VirtualDom> | undefined = <number>(lastData?.childList.length) > <number>(nowData?.childList.length) ? lastData?.childList : nowData?.childList;
+            const maxData: Array<Parser.VirtualDom> | undefined = ((lastData?.childList.length) as number) > ((nowData?.childList.length) as number) ? lastData?.childList : nowData?.childList;
             if (maxData !== undefined) {
                 for (let i = 0; i < maxData.length; i++) {
                     const nowElement = Html.getChild(parent)[index];
-                    detect(<HTMLElement>(nowElement), lastData?.childList[i], nowData?.childList[i], i);
+                    detect((nowElement as HTMLElement), lastData?.childList[i], nowData?.childList[i], i);
                 }
             }
 

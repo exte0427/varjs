@@ -101,10 +101,10 @@ export namespace parser {
                     i++;
                 }
                 else if (i + 1 < code.length && code[i + 1] === `/`) {
-                    while (i === code.length - 1 || code[i] === `\n`) { i++; }
+                    while (!(i === code.length - 1 || code[i] === `\n`)) { i++; }
                 }
                 else if (i + 1 < code.length && code[i + 1] === `*`) {
-                    while (code[i] === `*` && code[i + 1] === `/`) { i++; }
+                    while (!(code[i] === `*` && code[i + 1] === `/`)) { i++; }
                 }
                 else if (i + 1 < code.length && code[i + 1] === ">") {
                     tokens.push(new Token(TokenType.se, `/>`));

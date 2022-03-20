@@ -1,6 +1,7 @@
 import fs from "fs";
+import path from "path";
 export namespace varMain {
     export const getCode = (): string => {
-        return fs.readFileSync(`./var.js`, `utf8`);
+        return fs.readFileSync(path.join(__dirname, `var.js`), `utf8`);
     }
 }

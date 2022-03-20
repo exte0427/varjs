@@ -91,7 +91,7 @@ export namespace VarMake {
             const head = fs.readFileSync(path.join(infoPath, `html`, `head.html`), `utf-8`);
             const body = fs.readFileSync(path.join(infoPath, `html`, `body.html`), `utf-8`);
 
-            const html = `<!DOCTYPE html>\n<html lang = "en"><head>${head}\n${myCss.map(element => `<link rel="stylesheet" href="./css/${element}">\n`)}</head>\n<body>${body}\n${[...myScripts, `templates`].map(element => `<script src="./javascript/${element}.js"></script>`)}</body></html>`
+            const html = `<!DOCTYPE html>\n<html lang = "en"><head>${head}\n${myCss.map(element => `<link rel="stylesheet" href="./css/${element}">\n`).join(`\n`)}</head>\n<body>${body}\n${[...myScripts, `templates`, `var`].map(element => `<script src="./javascript/${element}.js"></script>`).join("\n")}</body></html>`
 
             fs.writeFileSync(path.join(nowPath, `index.html`), html);
         }

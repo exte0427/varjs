@@ -98,10 +98,13 @@ export namespace tempParser {
     };
 
     const parseTemplate = (dom: jsx.Dom, tokens: Array<parser.Token>): Template => {
-        let renderCode, scriptCode;
+        let renderCode: Array<parser.Token>, scriptCode: Array<parser.Token>;
         if (tokens[dom.child[0].endIndex.endIndex - 1].value === `render`) {
             renderCode = tokens.slice(dom.child[0].startIndex.startIndex, dom.child[0].endIndex.endIndex + 1);
-            scriptCode = tokens.slice(dom.child[1].startIndex.endIndex + 1, dom.child[1].endIndex.startIndex);
+            if (dom.child.length > 1)
+                scriptCode = tokens.slice(dom.child[1].startIndex.endIndex + 1, dom.child[1].endIndex.startIndex);
+            else
+                scriptCode = [];
         }
         else {
             renderCode = tokens.slice(dom.child[1].startIndex.startIndex, dom.child[1].endIndex.endIndex + 1);
@@ -122,41 +125,43 @@ export namespace tempParser {
         const retVars: Array<Variable> = [];
         retVars.push(new Variable(`Render`, `()=>{return ${jsx.makeJsx(render)}}`));
 
-        for (let i = 0; i < script.length; i++) {
-            if (script[i].value === `const` || script[i].value === `let` || script[i].value === `var`) {
-                const varName = script[i + 1].value;
-                const start = i + 3;
-                let end = 0, isFunc = false;
-                i += 3;
+        if (script.length !== 0) {
+            for (let i = 0; i < script.length; i++) {
+                if (script[i].value === `const` || script[i].value === `let` || script[i].value === `var`) {
+                    const varName = script[i + 1].value;
+                    const start = i + 3;
+                    let end = 0, isFunc = false;
+                    i += 3;
 
-                const mb: Array<true> = [];
-                while (true) {
-                    if (script.length - 1 === i) {
-                        end = i + 1;
-                        break;
-                    }
-                    if (script[i].type === parser.getType(`{`)) {
-                        isFunc = true;
-                        mb.push(true);
-                    }
-                    if (script[i].type === parser.getType(`}`)) {
-                        mb.pop();
-                        if (!mb.length) {
+                    const mb: Array<true> = [];
+                    while (true) {
+                        if (script.length - 1 === i) {
+                            end = i + 1;
+                            break;
+                        }
+                        if (script[i].type === parser.getType(`{`)) {
+                            isFunc = true;
+                            mb.push(true);
+                        }
+                        if (script[i].type === parser.getType(`}`)) {
+                            mb.pop();
+                            if (!mb.length) {
+                                end = i;
+                                break;
+                            }
+                        }
+                        if (!mb.length && (script[i].value === `const` || script[i].value === `let` || script[i].value === `var` || script[i].value === `function` || script[i].value === `\n` || script[i].value === `;`)) {
+                            i--;
                             end = i;
                             break;
                         }
-                    }
-                    if (!mb.length && (script[i].value === `const` || script[i].value === `let` || script[i].value === `var` || script[i].value === `function` || script[i].value === `\n` || script[i].value === `;`)) {
-                        i--;
-                        end = i;
-                        break;
+
+                        i++;
                     }
 
-                    i++;
+                    const value = jsx.makeJsx(script.slice(start, end + 1));
+                    retVars.push(new Variable(varName, value));
                 }
-
-                const value = jsx.makeJsx(script.slice(start, end + 1));
-                retVars.push(new Variable(varName, value));
             }
         }
 
