@@ -22,9 +22,9 @@ namespace VarInternal {
     export namespace Parser {
         export class VirtualState {
             attributeName: string;
-            value: string;
+            value: any;
 
-            constructor(attributeName_: string, value_: string) {
+            constructor(attributeName_: string, value_: any) {
                 this.attributeName = attributeName_;
                 this.value = value_;
             }

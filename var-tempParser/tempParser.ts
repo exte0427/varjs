@@ -83,7 +83,7 @@ export namespace tempParser {
                     i++;
                 }
 
-                retVars.push(new Variable(name, `()=>(${parser.makeCode(myTokens)})`));
+                retVars.push(new Variable(name, `()=>(${jsx.makeJsx(myTokens)})`));
                 isValue = false;
                 name = ``;
             }
@@ -112,7 +112,7 @@ export namespace tempParser {
         }
 
         const stateCode = parseState(tokens.slice(dom.startIndex.startIndex + 2, dom.startIndex.endIndex));
-        const name = tokens[dom.endIndex.endIndex - 1].value;
+        const name = parser.makeCode(tokens.slice(dom.endIndex.startIndex + 1, dom.endIndex.endIndex));
         const vars = makeVar(renderCode, scriptCode);
 
         return new Template(name, vars.map(el => new Variable(el.name, el.value

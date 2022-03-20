@@ -1,7 +1,7 @@
 node_modules/
 tsconfig.json
 tslint.json
-example/index.ts
+example/
 cat.bui/
 cat.var/
 .gitignore

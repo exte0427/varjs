@@ -61,33 +61,88 @@ export namespace jsx {
 
     class State {
         key: string;
-        data: string;
+        data: parser.Token;
 
-        constructor(key_: string, data_: string) {
+        constructor(key_: string, data_: parser.Token) {
             this.key = key_;
             this.data = data_;
         }
     }
 
     const getState = (tokens: Array<parser.Token>): Array<State> => {
-        const returnState: Array<State> = [];
-        for (let i = 0; i < tokens.length; i++) {
-            if (tokens[i].type === parser.TokenType.command)
-                returnState.push(new State(tokens[i].value, ``));
-            if (tokens[i].type === parser.TokenType.same) {
-                returnState[returnState.length - 1] = new State(returnState[returnState.length - 1].key, tokens[i + 1].value);
-                i++;
+        const retVars: Array<State> = [];
+        let i = 0;
+        let isValue = false;
+        let name = ``;
+        while (true) {
+            if (i === tokens.length)
+                break;
+
+            if (!isValue && tokens[i].type === parser.TokenType.command) {
+                if (name !== ``)
+                    retVars.push(new State(name, new parser.Token(parser.TokenType.command, `undefined`)));
+                name = tokens[i].value;
             }
+
+            if (isValue && tokens[i].type === parser.TokenType.command && (tokens[i].value === `false` || tokens[i].value === `true` || tokens[i].value === `null` || tokens[i].value === `undefined`)) {
+                // true or false or undefined or null
+                retVars.push(new State(name, tokens[i]));
+                isValue = false;
+                name = ``;
+            }
+
+            if (isValue && tokens[i].type === parser.TokenType.number) {
+                // number
+                retVars.push(new State(name, tokens[i]));
+                isValue = false;
+                name = ``;
+            }
+
+            if (isValue && (tokens[i].type === parser.TokenType.string_o || tokens[i].type === parser.TokenType.string_t || tokens[i].type === parser.TokenType.string_u)) {
+                // true or false
+                retVars.push(new State(name, tokens[i]));
+                isValue = false;
+                name = ``;
+            }
+
+            if (isValue && tokens[i].type === parser.TokenType.bb_start) {
+                // [js code]
+                const bb: Array<boolean> = [];
+                const myTokens: Array<parser.Token> = [];
+
+                while (true) {
+                    if (tokens[i].type === parser.TokenType.bb_start)
+                        bb.push(true);
+                    else if (tokens[i].type === parser.TokenType.bb_end)
+                        bb.pop();
+                    else
+                        myTokens.push(tokens[i]);
+
+                    if (bb.length === 0)
+                        break;
+
+                    i++;
+                }
+
+                retVars.push(new State(name, new parser.Token(parser.TokenType.command, makeJsx(myTokens))));
+                isValue = false;
+                name = ``;
+            }
+
+            if (tokens[i].type === parser.getType(`=`))
+                isValue = true;
+
+            i++;
         }
 
-        return returnState;
-    }
+        return retVars;
+    };
 
     const makeJs_state = (states: Array<State>): string => {
         const returnCode: Array<string> = [];
 
         for (const state of states) {
-            returnCode.push(`${setting.stateMaker}(\`${state.key}\`,\`${str_varChange(state.data)}\`)`);
+            returnCode.push(`${setting.stateMaker}(\`${state.key}\`,${parser.makeCode([state.data])})`);
         }
 
         return `[${returnCode.join(`,`)}]`;
