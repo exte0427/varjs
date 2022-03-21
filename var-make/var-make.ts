@@ -3,6 +3,7 @@ import path from "path";
 import { jsx } from "./../var-jsx/jsx";
 import { tempParser } from "./../var-tempParser/tempParser";
 import { varMain } from "./../var-main/varGetter";
+import { log } from "./../var-log/log";
 
 export namespace VarMake {
     export class Project {
@@ -12,11 +13,53 @@ export namespace VarMake {
             this.name = name_;
             this.myPath = process.cwd();
         }
+        delete() {
+            const startTime = Date.now();
+            let isFailed = false;
+            try {
+                this.delFile();
+            } catch (err) {
+                isFailed = true;
+            } finally {
+                const lastTime = Date.now();
+                if (!isFailed)
+                    log.success(`Var-Make`, `Successfully delete ${this.name} project - ${(lastTime - startTime) / 1000}s`);
+                else
+                    log.justErrorNoThrow(`Var-Make`, `Delete ${this.name} project Failed - ${(lastTime - startTime) / 1000}s`);
+            }
+        }
+        delFile() {
+            const nowPath_var = path.join(this.myPath, `${this.name}.var`);
+            const nowPath_bui = path.join(this.myPath, `${this.name}.bui`);
+
+            if (fs.existsSync(nowPath_var))
+                fs.rmSync(nowPath_var, { recursive: true, force: true });
+            else
+                log.justError(`Var-Make`, `No project Found`);
+
+            if (fs.existsSync(nowPath_bui))
+                fs.rmSync(nowPath_bui, { recursive: true, force: true });
+        }
         new() {
+            const startTime = Date.now();
+            let isFailed = false;
+            try {
+                this.newFile();
+            } catch (err) {
+                isFailed = true;
+            } finally {
+                const lastTime = Date.now();
+                if (!isFailed)
+                    log.success(`Var-Make`, `Make new project Successfully - ${(lastTime - startTime) / 1000}s`);
+                else
+                    log.justErrorNoThrow(`Var-Make`, `Make new project Failed - ${(lastTime - startTime) / 1000}s`);
+            }
+        }
+        newFile() {
             const nowPath = path.join(this.myPath, `${this.name}.var`);
 
             if (fs.existsSync(nowPath))
-                fs.rmSync(nowPath, { recursive: true, force: true });
+                log.justError(`Var-Make`, `Project is already exist`);
 
             fs.mkdirSync(nowPath);
 
@@ -36,6 +79,23 @@ export namespace VarMake {
             fs.mkdirSync(path.join(nowPath, `image`));
         }
         build() {
+            const startTime = Date.now();
+            let isFailed = false;
+            try {
+                this.buildFile();
+            } catch (err) {
+                if (err !== `internal`)
+                    console.log(err);
+                isFailed = true;
+            } finally {
+                const lastTime = Date.now();
+                if (!isFailed)
+                    log.success(`Var-Make`, `Build Successfully - ${(lastTime - startTime) / 1000}s`);
+                else
+                    log.justErrorNoThrow(`Var-Make`, `Build Failed - ${(lastTime - startTime) / 1000}s`);
+            }
+        }
+        buildFile() {
             const infoPath = path.join(this.myPath, `${this.name}.var`);
             const nowPath = path.join(this.myPath, `${this.name}.bui`);
 

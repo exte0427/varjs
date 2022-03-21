@@ -59,45 +59,48 @@ export namespace parser {
     export class Token {
         type: TokenType;
         value: string;
+        line: number;
 
-        constructor(type_: TokenType, value_: string) {
+        constructor(type_: TokenType, value_: string, line_: number = -1) {
             this.type = type_;
             this.value = value_;
+            this.line = line_;
         }
     }
 
     export const parse = (code: string) => {
         const tokens: Array<Token> = [];
+        let line = 1;
 
         for (let i = 0; i < code.length; i++) {
 
             if (code[i] === `(`)
-                tokens.push(new Token(TokenType.sb_start, `(`));
+                tokens.push(new Token(TokenType.sb_start, `(`, line));
             else if (code[i] === `)`)
-                tokens.push(new Token(TokenType.sb_end, `)`));
+                tokens.push(new Token(TokenType.sb_end, `)`, line));
             else if (code[i] === `{`)
-                tokens.push(new Token(TokenType.mb_start, `{`));
+                tokens.push(new Token(TokenType.mb_start, `{`, line));
             else if (code[i] === `}`)
-                tokens.push(new Token(TokenType.mb_end, `}`));
+                tokens.push(new Token(TokenType.mb_end, `}`, line));
             else if (code[i] === `[`)
-                tokens.push(new Token(TokenType.bb_start, `[`));
+                tokens.push(new Token(TokenType.bb_start, `[`, line));
             else if (code[i] === `]`)
-                tokens.push(new Token(TokenType.bb_end, `]`));
+                tokens.push(new Token(TokenType.bb_end, `]`, line));
             else if (code[i] === `*`) {
                 if (i + 1 < code.length && code[i + 1] === `*`) {
-                    tokens.push(new Token(TokenType.pow_o, `**`));
+                    tokens.push(new Token(TokenType.pow_o, `**`, line));
                     i++;
                 }
                 else if (i + 1 < code.length && code[i + 1] === `=`) {
-                    tokens.push(new Token(TokenType.mul_same, `*=`));
+                    tokens.push(new Token(TokenType.mul_same, `*=`, line));
                     i++;
                 }
                 else
-                    tokens.push(new Token(TokenType.mul, `*`));
+                    tokens.push(new Token(TokenType.mul, `*`, line));
             }
             else if (code[i] === `/`) {
                 if (i + 1 < code.length && code[i + 1] === `=`) {
-                    tokens.push(new Token(TokenType.div_same, `/=`));
+                    tokens.push(new Token(TokenType.div_same, `/=`, line));
                     i++;
                 }
                 else if (i + 1 < code.length && code[i + 1] === `/`) {
@@ -107,106 +110,106 @@ export namespace parser {
                     while (!(code[i] === `*` && code[i + 1] === `/`)) { i++; }
                 }
                 else if (i + 1 < code.length && code[i + 1] === ">") {
-                    tokens.push(new Token(TokenType.se, `/>`));
+                    tokens.push(new Token(TokenType.se, `/>`, line));
                     i++;
                 }
                 else
-                    tokens.push(new Token(TokenType.div, ``));
+                    tokens.push(new Token(TokenType.div, ``, line));
             }
             else if (code[i] === `+`) {
                 if (i + 1 < code.length && code[i + 1] === `+`) {
-                    tokens.push(new Token(TokenType.add_s, `++`));
+                    tokens.push(new Token(TokenType.add_s, `++`, line));
                     i++;
                 }
                 else if (i + 1 < code.length && code[i + 1] === `=`) {
-                    tokens.push(new Token(TokenType.add_same, `+=`));
+                    tokens.push(new Token(TokenType.add_same, `+=`, line));
                     i++;
                 }
                 else
-                    tokens.push(new Token(TokenType.plus, `+`));
+                    tokens.push(new Token(TokenType.plus, `+`, line));
             }
             else if (code[i] === `-`) {
                 if (i + 1 < code.length && code[i + 1] === `-`) {
-                    tokens.push(new Token(TokenType.mis_s, `--`));
+                    tokens.push(new Token(TokenType.mis_s, `--`, line));
                     i++;
                 }
                 else if (i + 1 < code.length && code[i + 1] === `=`) {
-                    tokens.push(new Token(TokenType.mis_same, `-=`));
+                    tokens.push(new Token(TokenType.mis_same, `-=`, line));
                     i++;
                 }
                 else
-                    tokens.push(new Token(TokenType.minus, `-`));
+                    tokens.push(new Token(TokenType.minus, `-`, line));
             }
             else if (code[i] === `!`) {
                 if (i + 1 < code.length && code[i + 1] === `=`) {
-                    tokens.push(new Token(TokenType.uneq, `!=`));
+                    tokens.push(new Token(TokenType.uneq, `!=`, line));
                     i++;
                 }
                 else if (i + 2 < code.length && code[i + 1] === `=` && code[i + 2] === `=`) {
-                    tokens.push(new Token(TokenType.uneq_t, `!==`));
+                    tokens.push(new Token(TokenType.uneq_t, `!==`, line));
                     i += 2;
                 }
                 else
-                    tokens.push(new Token(TokenType.not, `!`));
+                    tokens.push(new Token(TokenType.not, `!`, line));
             }
             else if (code[i] === `=`) {
                 if (i + 1 < code.length && code[i + 1] === `=`) {
-                    tokens.push(new Token(TokenType.eq, `==`));
+                    tokens.push(new Token(TokenType.eq, `==`, line));
                     i++;
                 }
                 else if (i + 2 < code.length && code[i + 1] === `=` && code[i + 2] === `=`) {
-                    tokens.push(new Token(TokenType.eq_t, `===`));
+                    tokens.push(new Token(TokenType.eq_t, `===`, line));
                     i += 2;
                 }
                 else if (i + 1 < code.length && code[i + 1] === ">") {
-                    tokens.push(new Token(TokenType.arrow, `=>`));
+                    tokens.push(new Token(TokenType.arrow, `=>`, line));
                     i++;
                 }
                 else
-                    tokens.push(new Token(TokenType.same, `=`));
+                    tokens.push(new Token(TokenType.same, `=`, line));
             }
             else if (code[i] === `:`)
-                tokens.push(new Token(TokenType.eq_jn, `:`));
+                tokens.push(new Token(TokenType.eq_jn, `:`, line));
             else if (code[i] === `>`) {
                 if (i + 1 < code.length && code[i + 1] === `=`) {
-                    tokens.push(new Token(TokenType.big_s, `>=`));
+                    tokens.push(new Token(TokenType.big_s, `>=`, line));
                     i++;
                 }
                 else
-                    tokens.push(new Token(TokenType.big, `>`));
+                    tokens.push(new Token(TokenType.big, `>`, line));
             }
             else if (code[i] === `<`) {
                 if (i + 1 < code.length && code[i + 1] === `=`) {
-                    tokens.push(new Token(TokenType.small_s, `<=`));
+                    tokens.push(new Token(TokenType.small_s, `<=`, line));
                     i++;
                 }
                 else if (i + 1 < code.length && code[i + 1] === `/`) {
-                    tokens.push(new Token(TokenType.ee, `</`));
+                    tokens.push(new Token(TokenType.ee, `</`, line));
                     i++;
                 }
                 else
-                    tokens.push(new Token(TokenType.small, `<`));
+                    tokens.push(new Token(TokenType.small, `<`, line));
             }
             else if (code[i] === `^`)
-                tokens.push(new Token(TokenType.pow, `^`));
+                tokens.push(new Token(TokenType.pow, `^`, line));
             else if (code[i] === `%`)
-                tokens.push(new Token(TokenType.rem, `%`));
+                tokens.push(new Token(TokenType.rem, `%`, line));
             else if (i + 1 < code.length && code[i] === `&` && code[i + 1] === `&`) {
                 i++;
-                tokens.push(new Token(TokenType.and, `&&`));
+                tokens.push(new Token(TokenType.and, `&&`, line));
             }
             else if (i + 1 < code.length && code[i] === `|` && code[i + 1] === `|`) {
                 i++;
-                tokens.push(new Token(TokenType.or, `||`));
+                tokens.push(new Token(TokenType.or, `||`, line));
             }
             else if (code[i] === `.`)
-                tokens.push(new Token(TokenType.point, `.`));
+                tokens.push(new Token(TokenType.point, `.`, line));
             else if (code[i] === `,`)
-                tokens.push(new Token(TokenType.comma, `,`));
+                tokens.push(new Token(TokenType.comma, `,`, line));
             else if (code[i] === `@`)
-                tokens.push(new Token(TokenType.oa, `@`));
+                tokens.push(new Token(TokenType.oa, `@`, line));
             else if (code[i] === `;`)
-                tokens.push(new Token(TokenType.semi, `;`));
+                tokens.push(new Token(TokenType.semi, `;`, line));
 
             else if ((/[0-9]/g).test(code[i])) {
                 let num: string = "";
@@ -215,7 +218,7 @@ export namespace parser {
                     i++;
                 }
 
-                tokens.push(new Token(TokenType.number, num));
+                tokens.push(new Token(TokenType.number, num, line));
 
                 i--;
             }
@@ -226,7 +229,7 @@ export namespace parser {
                     i++;
                 }
 
-                tokens.push(new Token(TokenType.command, cmd));
+                tokens.push(new Token(TokenType.command, cmd, line));
 
                 i--;
             }
@@ -238,7 +241,7 @@ export namespace parser {
                     i++;
                 }
 
-                tokens.push(new Token(TokenType.string_u, str));
+                tokens.push(new Token(TokenType.string_u, str, line));
             }
             else if (code[i] === `\"`) {
                 let str: string = "";
@@ -248,7 +251,7 @@ export namespace parser {
                     i++;
                 }
 
-                tokens.push(new Token(TokenType.string_t, str));
+                tokens.push(new Token(TokenType.string_t, str, line));
             }
             else if (code[i] === `\'`) {
                 let str: string = "";
@@ -258,10 +261,12 @@ export namespace parser {
                     i++;
                 }
 
-                tokens.push(new Token(TokenType.string_o, str));
+                tokens.push(new Token(TokenType.string_o, str, line));
             }
+            else if (code[i] === `\n`)
+                line++;
             else if (code[i] !== ` `)
-                tokens.push(new Token(TokenType.other, code[i]));
+                tokens.push(new Token(TokenType.other, code[i], line));
         }
 
         return tokens;

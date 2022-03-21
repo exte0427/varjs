@@ -1,4 +1,5 @@
 import { jsx } from "./../var-jsx/jsx";
+import { log } from "./../var-log/log";
 import { parser } from "./../var-parser/parser";
 export namespace tempParser {
 
@@ -98,7 +99,7 @@ export namespace tempParser {
     };
 
     const parseTemplate = (dom: jsx.Dom, tokens: Array<parser.Token>): Template => {
-        let renderCode: Array<parser.Token>, scriptCode: Array<parser.Token>;
+        let renderCode: Array<parser.Token> = [], scriptCode: Array<parser.Token> = [];
         if (tokens[dom.child[0].endIndex.endIndex - 1].value === `render`) {
             renderCode = tokens.slice(dom.child[0].startIndex.startIndex, dom.child[0].endIndex.endIndex + 1);
             if (dom.child.length > 1)

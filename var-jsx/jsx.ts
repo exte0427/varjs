@@ -1,4 +1,5 @@
 import { parser } from "./../var-parser/parser";
+import { log } from "./../var-log/log";
 export namespace jsx {
     export const setting = {
         "domMaker": "Var.make",
@@ -242,7 +243,33 @@ export namespace jsx {
         return returnTokens;
     };
 
-    const parseHtml = (tokens: Array<parser.Token>): Array<Dom> => {
+    const domStartError = (domStart: Array<DomPart>, tokens: Array<parser.Token>) => {
+        if (domStart.length > 0) {
+            for (const myDom of domStart) {
+                const bb: Array<boolean> = [];
+                const myTokens = tokens.slice(myDom.startIndex + 1, myDom.endIndex);
+                for (const nowToken of myTokens) {
+                    if (!(nowToken.type === parser.TokenType.command
+                        || nowToken.type === parser.TokenType.string_o
+                        || nowToken.type === parser.TokenType.string_t
+                        || nowToken.type === parser.TokenType.string_u
+                        || nowToken.type === parser.TokenType.same
+                        || nowToken.type === parser.TokenType.number
+                    )) {
+                        if (nowToken.type === parser.TokenType.bb_start)
+                            bb.push(true);
+                        else if (nowToken.type === parser.TokenType.bb_end)
+                            bb.pop();
+                        else if (!bb.length) {
+                            log.error(`Var-Jsx`, `Html Tag isn't closed`, tokens, nowToken.line);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    const parseHtml = (tokens: Array<parser.Token>, isHtml: boolean): Array<Dom> => {
         const dom_start: Array<number> = [];
         const dom_end: Array<number> = [];
 
@@ -270,18 +297,27 @@ export namespace jsx {
                         const lastPart = new DomPart(dom_end[dom_end.length - 1], index);
                         const child: Array<Dom> = [];
 
-                        for (let i = 0; i < doms.length; i++) {
-                            if (doms[i].startIndex.startIndex > firstPart.startIndex) {
-                                child.push(doms[i]);
-                                doms.splice(i, 1);
-                                i--;
+                        if (tokens[firstPart.startIndex + 1].value === tokens[lastPart.endIndex - 1].value) {
+
+                            for (let i = 0; i < doms.length; i++) {
+                                if (doms[i].startIndex.startIndex > firstPart.startIndex) {
+                                    child.push(doms[i]);
+                                    doms.splice(i, 1);
+                                    i--;
+                                }
                             }
+
+                            for (const myPart of domStart)
+                                if (myPart.startIndex > firstPart.startIndex)
+                                    domStartError([myPart], tokens);
+
+                            dom_end.pop();
+                            domStart.pop();
+
+                            doms.push(new Dom(firstPart, lastPart, child));
                         }
-
-                        dom_end.pop();
-                        domStart.pop();
-
-                        doms.push(new Dom(firstPart, lastPart, child));
+                        else
+                            log.error(`Var-Jsx`, `Dom isn't closed`, tokens, tokens[lastPart.startIndex - 1].line);
                     }
                     else {
                         const firstIndex = dom_start[dom_start.length - 1];
@@ -294,16 +330,31 @@ export namespace jsx {
             }
         }
 
+        if (dom_end.length > 0)
+            log.error(`Var-Jsx`, `Html Tag isn't closed`, tokens, tokens[dom_end[0]].line);
+        domStartError(domStart, tokens);
+
+        if (isHtml) {
+            if (dom_start.length > 0)
+                log.error(`Var-Jsx`, `Unexpective Tag`, tokens, tokens[dom_start[0]].line);
+            if (dom_end.length > 0)
+                log.error(`Var-Jsx`, `Unexpective Tag`, tokens, tokens[dom_end[0]].line);
+            if (domStart.length > 0) {
+                console.log(domStart);
+                log.error(`Var-Jsx`, `Dom isn't closed`, tokens, tokens[domStart[0].startIndex].line);
+            }
+        }
+
         return doms;
     }
 
     const make = (tokens: Array<parser.Token>): string => {
 
-        return parser.makeCode(sub(tokens, parseHtml(tokens)));
+        return parser.makeCode(sub(tokens, parseHtml(tokens, false)));
     };
 
     export const parse = (code: string): Array<Dom> => {
-        return parseHtml(parser.parse(code));
+        return parseHtml(parser.parse(code), true);
     }
 
     export const translate = (code: string): string => {
