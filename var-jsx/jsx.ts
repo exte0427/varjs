@@ -34,8 +34,65 @@ export namespace jsx {
         return text.slice(startNum, endNum + 1);
     };
 
-    const str_varChange = (value: string) => {
-        return value.replaceAll(`[`, `\${`).replaceAll(`]`, `}`);
+    const str_varChange = (myToken: parser.Token): parser.Token => {
+        if (myToken.type === parser.TokenType.string_o) {
+
+            const values = [`'`];
+            const str = myToken.value;
+
+            for (let i = 0; i < str.length; i++) {
+                if (str[i] === `[`) {
+                    let nowStr = ``;
+                    while (str[i + 1] !== `]`) {
+                        nowStr += str[i + 1];
+                        i++;
+                    }
+
+                    values[values.length - 1] += `'`;
+                    values.push(nowStr);
+                    values.push(`'`);
+                    i++;
+                }
+                else {
+                    values[values.length - 1] += str[i];
+                }
+            }
+
+            if (values[values.length - 1].charAt(values[values.length - 1].length - 1) !== `'`)
+                values[values.length - 1] += `'`;
+
+            return new parser.Token(parser.TokenType.command, values.join(`+`));
+        }
+        if (myToken.type === parser.TokenType.string_t) {
+
+            const values = [`"`];
+            const str = myToken.value;
+
+            for (let i = 0; i < str.length; i++) {
+                if (str[i] === `[`) {
+                    let nowStr = ``;
+                    while (str[i + 1] !== `]`) {
+                        nowStr += str[i + 1];
+                        i++;
+                    }
+
+                    values[values.length - 1] += `"`;
+                    values.push(nowStr);
+                    values.push(`"`);
+                    i++;
+                }
+                else {
+                    values[values.length - 1] += str[i];
+                }
+            }
+
+            if (values[values.length - 1].charAt(values[values.length - 1].length - 1) !== `"`)
+                values[values.length - 1] += `"`;
+
+            return new parser.Token(parser.TokenType.command, values.join(`+`));
+        }
+
+        return new parser.Token(parser.TokenType.string_u, myToken.value.replaceAll(`[`, `\${`).replaceAll(`]`, `}`));
     }
 
     class DomPart {
@@ -101,7 +158,7 @@ export namespace jsx {
 
             if (isValue && (tokens[i].type === parser.TokenType.string_o || tokens[i].type === parser.TokenType.string_t || tokens[i].type === parser.TokenType.string_u)) {
                 // true or false
-                retVars.push(new State(name, tokens[i]));
+                retVars.push(new State(name, str_varChange(tokens[i])));
                 isValue = false;
                 name = ``;
             }
@@ -116,8 +173,12 @@ export namespace jsx {
                         bb.push(true);
                     else if (tokens[i].type === parser.TokenType.bb_end)
                         bb.pop();
-                    else
-                        myTokens.push(tokens[i]);
+                    else {
+                        if (tokens[i].type === parser.TokenType.string_o || tokens[i].type === parser.TokenType.string_t || tokens[i].type === parser.TokenType.string_u)
+                            myTokens.push(str_varChange(tokens[i]));
+                        else
+                            myTokens.push(tokens[i]);
+                    }
 
                     if (bb.length === 0)
                         break;
@@ -293,31 +354,39 @@ export namespace jsx {
                     dom_end.push(index);
                 else if (nowToken.type === parser.getType(`>`)) {
                     if (dom_end.length !== 0) {
-                        const firstPart = domStart[domStart.length - 1];
-                        const lastPart = new DomPart(dom_end[dom_end.length - 1], index);
-                        const child: Array<Dom> = [];
-
-                        if (tokens[firstPart.startIndex + 1].value === tokens[lastPart.endIndex - 1].value) {
-
-                            for (let i = 0; i < doms.length; i++) {
-                                if (doms[i].startIndex.startIndex > firstPart.startIndex) {
-                                    child.push(doms[i]);
-                                    doms.splice(i, 1);
-                                    i--;
-                                }
-                            }
-
-                            for (const myPart of domStart)
-                                if (myPart.startIndex > firstPart.startIndex)
-                                    domStartError([myPart], tokens);
-
-                            dom_end.pop();
-                            domStart.pop();
-
-                            doms.push(new Dom(firstPart, lastPart, child));
+                        if (domStart.length < 1) {
+                            log.error(`Var-Jsx`, `Unexpected close`, tokens, nowToken.line);
                         }
-                        else
-                            log.error(`Var-Jsx`, `Dom isn't closed`, tokens, tokens[lastPart.startIndex - 1].line);
+                        else {
+                            const firstPart = domStart[domStart.length - 1];
+                            const lastPart = new DomPart(dom_end[dom_end.length - 1], index);
+                            const child: Array<Dom> = [];
+
+                            if (tokens[firstPart.startIndex + 1].value === tokens[lastPart.endIndex - 1].value) {
+
+                                for (let i = 0; i < doms.length; i++) {
+                                    if (doms[i].startIndex.startIndex > firstPart.startIndex) {
+                                        child.push(doms[i]);
+                                        doms.splice(i, 1);
+                                        i--;
+                                    }
+                                }
+
+                                for (const myPart of domStart)
+                                    if (myPart.startIndex > firstPart.startIndex)
+                                        domStartError([myPart], tokens);
+
+                                dom_end.pop();
+                                domStart.pop();
+
+                                doms.push(new Dom(firstPart, lastPart, child));
+                            }
+                            else {
+                                log.error(`Var-Jsx`, `<${tokens[firstPart.startIndex + 1].value}> isn't closed`, tokens, tokens[lastPart.startIndex - 1].line);
+                                domStart.pop();
+                                dom_end.pop();
+                            }
+                        }
                     }
                     else {
                         const firstIndex = dom_start[dom_start.length - 1];
@@ -328,6 +397,7 @@ export namespace jsx {
                     }
                 }
             }
+
         }
 
         if (dom_end.length > 0)
@@ -340,8 +410,8 @@ export namespace jsx {
             if (dom_end.length > 0)
                 log.error(`Var-Jsx`, `Unexpective Tag`, tokens, tokens[dom_end[0]].line);
             if (domStart.length > 0) {
-                console.log(domStart);
-                log.error(`Var-Jsx`, `Dom isn't closed`, tokens, tokens[domStart[0].startIndex].line);
+                for (const myDom of domStart)
+                    log.error(`Var-Jsx`, `<${tokens[myDom.startIndex + 1].value}> isn't closed`, tokens, tokens[tokens.length - 1].line);
             }
         }
 

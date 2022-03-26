@@ -9,26 +9,18 @@ export namespace VarMake {
     export class Project {
         name: string;
         myPath: string;
+        runList: Array<number>;
         constructor(name_: string) {
             this.name = name_;
             this.myPath = process.cwd();
+            this.runList = [];
         }
-        delete() {
-            const startTime = Date.now();
-            let isFailed = false;
-            try {
-                this.delFile();
-            } catch (err) {
-                isFailed = true;
-            } finally {
-                const lastTime = Date.now();
-                if (!isFailed)
-                    log.success(`Var-Make`, `Successfully delete ${this.name} project - ${(lastTime - startTime) / 1000}s`);
-                else
-                    log.justErrorNoThrow(`Var-Make`, `Delete ${this.name} project Failed - ${(lastTime - startTime) / 1000}s`);
-            }
-        }
-        delFile() {
+
+        new() { this.runList.push(0) }
+        build() { this.runList.push(1) }
+        delete() { this.runList.push(2) }
+
+        delete_() {
             const nowPath_var = path.join(this.myPath, `${this.name}.var`);
             const nowPath_bui = path.join(this.myPath, `${this.name}.bui`);
 
@@ -40,22 +32,7 @@ export namespace VarMake {
             if (fs.existsSync(nowPath_bui))
                 fs.rmSync(nowPath_bui, { recursive: true, force: true });
         }
-        new() {
-            const startTime = Date.now();
-            let isFailed = false;
-            try {
-                this.newFile();
-            } catch (err) {
-                isFailed = true;
-            } finally {
-                const lastTime = Date.now();
-                if (!isFailed)
-                    log.success(`Var-Make`, `Make new project Successfully - ${(lastTime - startTime) / 1000}s`);
-                else
-                    log.justErrorNoThrow(`Var-Make`, `Make new project Failed - ${(lastTime - startTime) / 1000}s`);
-            }
-        }
-        newFile() {
+        new_() {
             const nowPath = path.join(this.myPath, `${this.name}.var`);
 
             if (fs.existsSync(nowPath))
@@ -78,24 +55,7 @@ export namespace VarMake {
 
             fs.mkdirSync(path.join(nowPath, `image`));
         }
-        build() {
-            const startTime = Date.now();
-            let isFailed = false;
-            try {
-                this.buildFile();
-            } catch (err) {
-                if (err !== `internal`)
-                    console.log(err);
-                isFailed = true;
-            } finally {
-                const lastTime = Date.now();
-                if (!isFailed)
-                    log.success(`Var-Make`, `Build Successfully - ${(lastTime - startTime) / 1000}s`);
-                else
-                    log.justErrorNoThrow(`Var-Make`, `Build Failed - ${(lastTime - startTime) / 1000}s`);
-            }
-        }
-        buildFile() {
+        build_() {
             const infoPath = path.join(this.myPath, `${this.name}.var`);
             const nowPath = path.join(this.myPath, `${this.name}.bui`);
 
@@ -155,5 +115,38 @@ export namespace VarMake {
 
             fs.writeFileSync(path.join(nowPath, `index.html`), html);
         }
+    }
+
+    export const run = (project: Project): void => {
+        for (const nowNum of project.runList) {
+            if (nowNum === 0) {
+                const nowErrs = log.errorList;
+                project.new_();
+
+                if (nowErrs.length === log.errorList.length)
+                    log.success(`VarMake`, `Make new var file successfully`);
+            }
+            if (nowNum === 1) {
+                const nowErrs = log.errorList;
+                project.build_();
+
+                if (nowErrs.length === log.errorList.length)
+                    log.success(`VarMake`, `Build var file successfully`);
+            }
+            if (nowNum === 2) {
+                const nowErrs = log.errorList;
+                project.delete_();
+
+                if (nowErrs.length === log.errorList.length)
+                    log.success(`VarMake`, `Delete var file successfully`);
+            }
+        }
+
+        if (log.errorList.length)
+            for (const errStr of log.errorList)
+                console.log(errStr);
+        else
+            for (const scsStr of log.successList)
+                console.log(scsStr);
     }
 }

@@ -34,21 +34,17 @@ export namespace log {
             crimson: "\x1b[48m"
         }
     };
+
+    export const errorList: Array<string> = [];
+    export const successList: Array<string> = [];
     export const success = (name: string, str: string) => {
-        console.log(`${Color.bg.green}${Color.bright}   ${name} ✓   ${Color.reset} ${Color.fg.green}${str}${Color.reset}`);
+        successList.push(`${Color.bg.green}${Color.bright}   ${name} ✓   ${Color.reset} ${Color.fg.green}${str}${Color.reset}`);
     }
     export const error = (name: string, str: string, tokens: Array<parser.Token>, line: number) => {
-        console.log(`${Color.bg.red}${Color.bright}   ${name} ✕   ${Color.reset} ${Color.fg.red}${str}${Color.reset}`);
-        console.log(`${` `.repeat(`   ${name} ✕   `.length)} ${Color.fg.red}${Color.underscore}${parser.makeCode(tokens.filter(e => e.line === line))}${Color.reset} at line ${line}`);
-
-        throw `internal`;
+        errorList.push(`${Color.bg.red}${Color.bright}   ${name} ✕   ${Color.reset} ${Color.fg.red}${str}${Color.reset}`);
+        errorList.push(`${` `.repeat(`   ${name} ✕   `.length)} ${Color.fg.red}${Color.underscore}${parser.makeCode(tokens.filter(e => e.line === line))}${Color.reset} at line ${line}`);
     }
     export const justError = (name: string, str: string) => {
-        console.log(`${Color.bg.red}${Color.bright}   ${name} ✕   ${Color.reset} ${Color.fg.red}${str}${Color.reset}`);
-
-        throw `internal`;
-    }
-    export const justErrorNoThrow = (name: string, str: string) => {
-        console.log(`${Color.bg.red}${Color.bright}   ${name} ✕   ${Color.reset} ${Color.fg.red}${str}${Color.reset}`);
+        errorList.push(`${Color.bg.red}${Color.bright}   ${name} ✕   ${Color.reset} ${Color.fg.red}${str}${Color.reset}`);
     }
 }

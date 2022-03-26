@@ -22,8 +22,8 @@ export namespace tempParser {
         }
     }
     const parse = (str: string): Array<Template> => {
-        const tokens = parser.parse(`<html>${str}</html>`);
-        const dom = jsx.parse(`<html>${str}</html>`)[0];
+        const tokens = parser.parse(`<html>\n${str}\n</html>`);
+        const dom = jsx.parse(`<html>\n${str}\n</html>`)[0];
 
         const templates = dom.child.map(element => parseTemplate(element, tokens));
         return templates;
@@ -100,26 +100,43 @@ export namespace tempParser {
 
     const parseTemplate = (dom: jsx.Dom, tokens: Array<parser.Token>): Template => {
         let renderCode: Array<parser.Token> = [], scriptCode: Array<parser.Token> = [];
-        if (tokens[dom.child[0].endIndex.endIndex - 1].value === `render`) {
-            renderCode = tokens.slice(dom.child[0].startIndex.startIndex, dom.child[0].endIndex.endIndex + 1);
-            if (dom.child.length > 1)
-                scriptCode = tokens.slice(dom.child[1].startIndex.endIndex + 1, dom.child[1].endIndex.startIndex);
-            else
-                scriptCode = [];
+
+        // if a dom
+        if (dom.child.length >= 1) {
+            const name = parser.makeCode(tokens.slice(dom.endIndex.startIndex + 1, dom.endIndex.endIndex));
+
+            // if not a template, error
+            const errDomList = dom.child.filter(element => (tokens[element.endIndex.endIndex - 1].value !== `render` && tokens[element.endIndex.endIndex - 1].value !== `script`));
+            if (errDomList.length !== 0) {
+                log.justError(`VarTemplate`, `<${name}> has unexpected child dom [${errDomList.map(e =>
+                    parser.makeCode(tokens.slice(e.endIndex.startIndex + 1, e.endIndex.endIndex))).join(`,`)}]`);
+                return new Template(`none`, [], []);
+            }
+
+            if (tokens[dom.child[0].endIndex.endIndex - 1].value === `render`) {
+                renderCode = tokens.slice(dom.child[0].startIndex.startIndex, dom.child[0].endIndex.endIndex + 1);
+                if (dom.child.length > 1)
+                    scriptCode = tokens.slice(dom.child[1].startIndex.endIndex + 1, dom.child[1].endIndex.startIndex);
+                else
+                    scriptCode = [];
+            }
+            else {
+                renderCode = tokens.slice(dom.child[1].startIndex.startIndex, dom.child[1].endIndex.endIndex + 1);
+                scriptCode = tokens.slice(dom.child[0].startIndex.endIndex + 1, dom.child[0].endIndex.startIndex);
+            }
+
+            const stateCode = parseState(tokens.slice(dom.startIndex.startIndex + 2, dom.startIndex.endIndex));
+            const vars = makeVar(renderCode, scriptCode);
+
+            return new Template(name, vars.map(el => new Variable(el.name, el.value
+                .replaceAll(`Var@variable`, vars.map(e => e.name).filter(e => e !== `render` && e !== `Start` && e !== `Update`).join(`,`))
+                .replaceAll(`Var@return`, vars.filter(e => e.name !== `render` && e.name !== `Start` && e.name !== `Update`).map(e => `"${e.name}":${e.name}`).join(`,`)))),
+                stateCode);
         }
         else {
-            renderCode = tokens.slice(dom.child[1].startIndex.startIndex, dom.child[1].endIndex.endIndex + 1);
-            scriptCode = tokens.slice(dom.child[0].startIndex.endIndex + 1, dom.child[0].endIndex.startIndex);
+            log.justError(`VarTemplate`, `Template is unexpected`);
+            return new Template(`none`, [], []);
         }
-
-        const stateCode = parseState(tokens.slice(dom.startIndex.startIndex + 2, dom.startIndex.endIndex));
-        const name = parser.makeCode(tokens.slice(dom.endIndex.startIndex + 1, dom.endIndex.endIndex));
-        const vars = makeVar(renderCode, scriptCode);
-
-        return new Template(name, vars.map(el => new Variable(el.name, el.value
-            .replaceAll(`Var@variable`, vars.map(e => e.name).filter(e => e !== `render` && e !== `Start` && e !== `Update`).join(`,`))
-            .replaceAll(`Var@return`, vars.filter(e => e.name !== `render` && e.name !== `Start` && e.name !== `Update`).map(e => `"${e.name}":${e.name}`).join(`,`)))),
-            stateCode);
     }
 
     const makeVar = (render: Array<parser.Token>, script: Array<parser.Token>): Array<Variable> => {
