@@ -1,5 +1,5 @@
 var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
+    __assign = Object.assign || function (t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
@@ -28,7 +28,7 @@ var Var;
         return new VarInternal.Parser.VirtualDom(tagName, states, childNodes.flat(), "", new VarInternal.Key.KeyForm(-1, -1));
     };
     Var.text = function (value) {
-        return new VarInternal.Parser.VirtualDom("text", [], [], value, new VarInternal.Key.KeyForm(-1, -1));
+        return new VarInternal.Parser.VirtualDom("var-text", [], [], value, new VarInternal.Key.KeyForm(-1, -1));
     };
     Var.state = function (stateName, stateVal) {
         return new VarInternal.Parser.VirtualState(stateName, stateVal);
@@ -87,7 +87,7 @@ var VarInternal;
             return text.slice(startNum, endNum + 1);
         };
         Parser.texToDom = function (text) {
-            return new VirtualDom("text", [], [], text, new VarInternal.Key.KeyForm(-1, -1));
+            return new VirtualDom("var-text", [], [], text, new VarInternal.Key.KeyForm(-1, -1));
         };
         Parser.parseAttributes = function (attributes) {
             var returningStates = [];
@@ -112,7 +112,7 @@ var VarInternal;
                 }
             }
             else if (element !== undefined && element !== null) {
-                tagName = "text";
+                tagName = "var-text";
                 text = Parser.parseText(element.nodeValue);
             }
             return new VirtualDom(tagName, attributes, children, text, new VarInternal.Key.KeyForm(key, children.length));
@@ -175,7 +175,7 @@ var VarInternal;
     var changer;
     (function (changer) {
         changer.make = function (data) {
-            if (data.tagName == "text")
+            if (data.tagName === "var-text")
                 return document.createTextNode(data.value);
             else {
                 var myDom_1 = document.createElement(data.tagName);
@@ -291,11 +291,11 @@ var VarInternal;
                     changer.change(parent, target, nowData);
                     return;
                 }
-                else if ((lastData === null || lastData === void 0 ? void 0 : lastData.tagName) === "text" && (nowData === null || nowData === void 0 ? void 0 : nowData.tagName) === "text" && lastData.value != nowData.value) {
+                else if ((lastData === null || lastData === void 0 ? void 0 : lastData.tagName) === "var-text" && (nowData === null || nowData === void 0 ? void 0 : nowData.tagName) === "var-text" && lastData.value != nowData.value) {
                     changer.change(parent, target, nowData);
                     return;
                 }
-                else if ((lastData === null || lastData === void 0 ? void 0 : lastData.tagName) === (nowData === null || nowData === void 0 ? void 0 : nowData.tagName) && (lastData === null || lastData === void 0 ? void 0 : lastData.tagName) != "text")
+                else if ((lastData === null || lastData === void 0 ? void 0 : lastData.tagName) === (nowData === null || nowData === void 0 ? void 0 : nowData.tagName) && (lastData === null || lastData === void 0 ? void 0 : lastData.tagName) !== "var-text")
                     changer.attrChange(target, lastData === null || lastData === void 0 ? void 0 : lastData.attributesList, nowData === null || nowData === void 0 ? void 0 : nowData.attributesList);
             }
             var maxData = (lastData === null || lastData === void 0 ? void 0 : lastData.childList.length) > (nowData === null || nowData === void 0 ? void 0 : nowData.childList.length) ? lastData === null || lastData === void 0 ? void 0 : lastData.childList : nowData === null || nowData === void 0 ? void 0 : nowData.childList;

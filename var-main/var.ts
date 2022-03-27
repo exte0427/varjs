@@ -5,7 +5,7 @@ namespace Var {
     }
 
     export const text = (value: string) => {
-        return new VarInternal.Parser.VirtualDom(`text`, [], [], value, new VarInternal.Key.KeyForm(-1, -1));
+        return new VarInternal.Parser.VirtualDom(`var-text`, [], [], value, new VarInternal.Key.KeyForm(-1, -1));
     }
 
     export const state = (stateName: string, stateVal: any): VarInternal.Parser.VirtualState => {
@@ -79,7 +79,7 @@ namespace VarInternal {
         }
 
         export const texToDom = (text: string): VirtualDom => {
-            return new VirtualDom(`text`, [], [], text, new VarInternal.Key.KeyForm(-1, -1));
+            return new VirtualDom(`var-text`, [], [], text, new VarInternal.Key.KeyForm(-1, -1));
         }
 
         export const parseAttributes = (attributes: NamedNodeMap): Array<VirtualState> => {
@@ -109,7 +109,7 @@ namespace VarInternal {
                 }
             }
             else if (element !== undefined && element !== null) {
-                tagName = `text`;
+                tagName = `var-text`;
                 text = parseText(element.nodeValue as string);
             }
 
@@ -188,7 +188,7 @@ namespace VarInternal {
 
     export namespace changer {
         export const make = (data: Parser.VirtualDom): HTMLElement | Text => {
-            if (data.tagName == `text`)
+            if (data.tagName === `var-text`)
                 return document.createTextNode(data.value);
             else {
                 const myDom: HTMLElement = document.createElement(data.tagName);
@@ -325,12 +325,12 @@ namespace VarInternal {
                     return;
                 }
 
-                else if (lastData?.tagName === `text` && nowData?.tagName === `text` && lastData.value != nowData.value) {
+                else if (lastData?.tagName === `var-text` && nowData?.tagName === `var-text` && lastData.value != nowData.value) {
                     changer.change(parent, target, nowData as Parser.VirtualDom);
                     return;
                 }
 
-                else if (lastData?.tagName === nowData?.tagName && lastData?.tagName != `text`)
+                else if (lastData?.tagName === nowData?.tagName && lastData?.tagName !== `var-text`)
                     changer.attrChange(target, lastData?.attributesList as Array<Parser.VirtualState>, nowData?.attributesList as Array<Parser.VirtualState>);
             }
             const maxData: Array<Parser.VirtualDom> | undefined = ((lastData?.childList.length) as number) > ((nowData?.childList.length) as number) ? lastData?.childList : nowData?.childList;

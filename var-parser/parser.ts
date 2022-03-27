@@ -114,7 +114,7 @@ export namespace parser {
                     i++;
                 }
                 else
-                    tokens.push(new Token(TokenType.div, ``, line));
+                    tokens.push(new Token(TokenType.div, `/`, line));
             }
             else if (code[i] === `+`) {
                 if (i + 1 < code.length && code[i + 1] === `+`) {
@@ -222,9 +222,9 @@ export namespace parser {
 
                 i--;
             }
-            else if ((/[a-zA-Z]/g).test(code[i])) {
+            else if ((/[a-zA-Z_]/g).test(code[i])) {
                 let cmd: string = "";
-                while (i < code.length && (/[a-zA-Z0-9]/g).test(code[i])) {
+                while (i < code.length && (/[a-zA-Z0-9_]/g).test(code[i])) {
                     cmd += code[i];
                     i++;
                 }

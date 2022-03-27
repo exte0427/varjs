@@ -49,7 +49,7 @@ export namespace jsx {
                     }
 
                     values[values.length - 1] += `'`;
-                    values.push(nowStr);
+                    values.push(`(${nowStr})`);
                     values.push(`'`);
                     i++;
                 }
@@ -77,7 +77,7 @@ export namespace jsx {
                     }
 
                     values[values.length - 1] += `"`;
-                    values.push(nowStr);
+                    values.push(`(${nowStr})`);
                     values.push(`"`);
                     i++;
                 }
@@ -169,8 +169,24 @@ export namespace jsx {
                 const myTokens: Array<parser.Token> = [];
 
                 while (true) {
-                    if (tokens[i].type === parser.TokenType.bb_start)
+                    if (tokens[i].type === parser.TokenType.bb_start) {
+                        const nowLen = bb.length;
+                        const nowTokens: Array<parser.Token> = [];
                         bb.push(true);
+
+                        while (bb.length !== nowLen) {
+                            i++;
+                            nowTokens.push(tokens[i]);
+
+                            if (tokens[i].type === parser.TokenType.bb_start)
+                                bb.push(true);
+                            if (tokens[i].type === parser.TokenType.bb_end)
+                                bb.pop();
+                        }
+
+                        nowTokens.pop();
+                        myTokens.push(new parser.Token(parser.TokenType.command, makeJsx(nowTokens)));
+                    }
                     else if (tokens[i].type === parser.TokenType.bb_end)
                         bb.pop();
                     else {
