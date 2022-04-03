@@ -277,6 +277,8 @@ namespace VarInternal {
             let myVar = target.var;
             myVar = getState(target);
 
+            if (excFir)
+                myVar.myThis = myVar;
             if (excFir && myVar.Start !== undefined)
                 myVar.Start();
 

@@ -29,6 +29,28 @@ export namespace tempParser {
         return templates;
     };
 
+    const thisManager = (targets: Array<parser.Token>, vars: Array<string>): Array<parser.Token> => {
+
+        let setVar = false;
+        let i = 0;
+        for (const token of targets) {
+            if (token.type === parser.TokenType.command && (token.value === `const` || token.value === `var` || token.value === `let`))
+                setVar = true;
+
+            if (token.type === parser.TokenType.command && vars.includes(token.value)) {
+                if (setVar === true) {
+                    log.error(`VarTemplate`, `${token.value} is already exist`, targets, token.line);
+                    setVar = false;
+                }
+                else
+                    targets[i].value = `this.myThis.${token.value}`;
+            }
+            i++;
+        }
+
+        return targets;
+    }
+
     const parseState = (tokens: Array<parser.Token>): Array<Variable> => {
         const retVars: Array<Variable> = [];
         let i = 0;
@@ -98,6 +120,11 @@ export namespace tempParser {
         return retVars;
     };
 
+    const finishTemplate = (name: string, vars: Array<Variable>, stateCode: Array<Variable>): Template => {
+        const varNames = [...vars.map(e => e.name), ...stateCode.map(e => e.name)];
+        return new Template(name, [new Variable(`myThis`, `undefined`), new Variable(`Render`, `()=>{return ${parser.makeCode(thisManager(parser.parse(jsx.makeJsx(vars[0].value)), varNames))}}`), ...vars.slice(1).map(e => (new Variable(e.name, parser.makeCode(thisManager(e.value, varNames)))))], stateCode);
+    }
+
     const parseTemplate = (dom: jsx.Dom, tokens: Array<parser.Token>): Template => {
         let renderCode: Array<parser.Token> = [], scriptCode: Array<parser.Token> = [];
 
@@ -125,13 +152,10 @@ export namespace tempParser {
                 scriptCode = tokens.slice(dom.child[0].startIndex.endIndex + 1, dom.child[0].endIndex.startIndex);
             }
 
-            const stateCode = parseState(tokens.slice(dom.startIndex.startIndex + 2, dom.startIndex.endIndex));
+            const states = parseState(tokens.slice(dom.startIndex.startIndex + 2, dom.startIndex.endIndex));
             const vars = makeVar(renderCode, scriptCode);
 
-            return new Template(name, vars.map(el => new Variable(el.name, el.value
-                .replaceAll(`Var@variable`, vars.map(e => e.name).filter(e => e !== `render` && e !== `Start` && e !== `Update`).join(`,`))
-                .replaceAll(`Var@return`, vars.filter(e => e.name !== `render` && e.name !== `Start` && e.name !== `Update`).map(e => `"${e.name}":${e.name}`).join(`,`)))),
-                stateCode);
+            return finishTemplate(name, vars, states);
         }
         else {
             log.justError(`VarTemplate`, `Template is unexpected`);
@@ -141,7 +165,7 @@ export namespace tempParser {
 
     const makeVar = (render: Array<parser.Token>, script: Array<parser.Token>): Array<Variable> => {
         const retVars: Array<Variable> = [];
-        retVars.push(new Variable(`Render`, `()=>{return ${jsx.makeJsx(render)}}`));
+        retVars.push(new Variable(`Render`, render));
 
         if (script.length !== 0) {
             for (let i = 0; i < script.length; i++) {
@@ -177,7 +201,7 @@ export namespace tempParser {
                         i++;
                     }
 
-                    const value = jsx.makeJsx(script.slice(start, end + 1));
+                    const value = script.slice(start, end + 1);
                     retVars.push(new Variable(varName, value));
                 }
             }

@@ -1,5 +1,5 @@
 var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function (t) {
+    __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
@@ -253,6 +253,8 @@ var VarInternal;
         detecter.excute = function (target, excFir) {
             var myVar = target["var"];
             myVar = detecter.getState(target);
+            if (excFir)
+                myVar.myThis = myVar;
             if (excFir && myVar.Start !== undefined)
                 myVar.Start();
             if (myVar.Update !== undefined)
