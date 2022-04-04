@@ -271,7 +271,7 @@ namespace VarInternal {
 
         export const attrChange = (target: HTMLElement, lastAttr: Array<Parser.VirtualState>, nowAttr: Array<Parser.VirtualState>): void => {
             nowAttr.map((element) => {
-                if (lastAttr.find(e => e.attributeName === element.attributeName) == undefined)
+                if (lastAttr.find(e => e.attributeName === element.attributeName) === undefined)
                     target.setAttribute(element.attributeName, element.value);
                 if (element.value !== lastAttr.find(e => e.attributeName === element.attributeName)?.value)
                     target.setAttribute(element.attributeName, element.value);
@@ -279,7 +279,7 @@ namespace VarInternal {
 
             // del
             lastAttr.map(element => {
-                if (nowAttr.find(e => e.attributeName === element.attributeName) == undefined)
+                if (nowAttr.find(e => e.attributeName === element.attributeName) === undefined)
                     target.removeAttribute(element.attributeName);
             })
         }

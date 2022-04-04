@@ -247,14 +247,14 @@ var VarInternal;
         changer.attrChange = function (target, lastAttr, nowAttr) {
             nowAttr.map(function (element) {
                 var _a;
-                if (lastAttr.find(function (e) { return e.attributeName === element.attributeName; }) == undefined)
+                if (lastAttr.find(function (e) { return e.attributeName === element.attributeName; }) === undefined)
                     target.setAttribute(element.attributeName, element.value);
                 if (element.value !== ((_a = lastAttr.find(function (e) { return e.attributeName === element.attributeName; })) === null || _a === void 0 ? void 0 : _a.value))
                     target.setAttribute(element.attributeName, element.value);
             });
             // del
             lastAttr.map(function (element) {
-                if (nowAttr.find(function (e) { return e.attributeName === element.attributeName; }) == undefined)
+                if (nowAttr.find(function (e) { return e.attributeName === element.attributeName; }) === undefined)
                     target.removeAttribute(element.attributeName);
             });
         };

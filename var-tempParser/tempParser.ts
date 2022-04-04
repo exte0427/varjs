@@ -50,6 +50,9 @@ export namespace tempParser {
                         targets[i].value = `this.${token.value}`;
                 }
             }
+            if (token.type === parser.TokenType.string_o || token.type === parser.TokenType.string_t || token.type === parser.TokenType.string_u) {
+
+            }
             if (token.type === parser.TokenType.bb_start)
                 bb.push(true);
             if (token.type === parser.TokenType.bb_end)
