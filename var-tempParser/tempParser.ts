@@ -29,10 +29,11 @@ export namespace tempParser {
         return templates;
     };
 
-    const thisManager = (targets: Array<parser.Token>, vars: Array<string>): Array<parser.Token> => {
+    const thisManager = (targets: Array<parser.Token>, vars: Array<string>, isState: boolean): Array<parser.Token> => {
 
         let setVar = false;
         let i = 0;
+        const bb: Array<boolean> = [];
         for (const token of targets) {
             if (token.type === parser.TokenType.command && (token.value === `const` || token.value === `var` || token.value === `let`))
                 setVar = true;
@@ -42,9 +43,17 @@ export namespace tempParser {
                     log.error(`VarTemplate`, `${token.value} is already exist`, targets, token.line);
                     setVar = false;
                 }
-                else
-                    targets[i].value = `this.myThis.${token.value}`;
+                else {
+                    if (isState && bb.length)
+                        targets[i].value = `myThis.${token.value}`;
+                    else if (!isState)
+                        targets[i].value = `this.${token.value}`;
+                }
             }
+            if (token.type === parser.TokenType.bb_start)
+                bb.push(true);
+            if (token.type === parser.TokenType.bb_end)
+                bb.pop();
             i++;
         }
 
@@ -121,8 +130,8 @@ export namespace tempParser {
     };
 
     const finishTemplate = (name: string, vars: Array<Variable>, stateCode: Array<Variable>): Template => {
-        const varNames = [...vars.map(e => e.name), ...stateCode.map(e => e.name)];
-        return new Template(name, [new Variable(`myThis`, `undefined`), new Variable(`Render`, `()=>{return ${parser.makeCode(thisManager(parser.parse(jsx.makeJsx(vars[0].value)), varNames))}}`), ...vars.slice(1).map(e => (new Variable(e.name, parser.makeCode(thisManager(e.value, varNames)))))], stateCode);
+        const varNames = [`innerHtml`, ...vars.map(e => e.name), ...stateCode.map(e => e.name)];
+        return new Template(name, [new Variable(`innerHtml`, `undefined`), new Variable(`myThis`, `undefined`), new Variable(`Render`, `()=>{return ${jsx.makeJsx(thisManager(vars[0].value, varNames, true))}}`), ...vars.slice(1).map(e => (new Variable(e.name, parser.makeCode(thisManager(e.value, varNames, false)))))], stateCode);
     }
 
     const parseTemplate = (dom: jsx.Dom, tokens: Array<parser.Token>): Template => {

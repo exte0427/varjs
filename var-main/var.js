@@ -34,7 +34,12 @@ var Var;
         return new VarInternal.Parser.VirtualState(stateName, stateVal);
     };
     Var.change = function (value) {
-        return VarInternal.varManage.compile([value])[0];
+        if (Array.isArray(value) && value[0] instanceof VarInternal.Parser.VirtualDom)
+            return Var.make.apply(Var, __spreadArray(["variable", []], value, false));
+        else if (value instanceof VarInternal.Parser.VirtualDom)
+            return Var.make("variable", [], value);
+        else
+            return Var.make("variable", [], Var.text(value));
     };
 })(Var || (Var = {}));
 var VarInternal;
@@ -155,10 +160,10 @@ var VarInternal;
         main.delList = [];
         main.init = function () {
             // start
-            console.log("Var.js");
             main.firstData = Parser.parse(Parser.getHtml(), 0);
             main.lastData = main.firstData;
             main.nowData = main.firstData;
+            console.log("Var.js");
         };
         main.detectStart = function (time) {
             setInterval(function () {
@@ -174,11 +179,53 @@ var VarInternal;
     })(main = VarInternal.main || (VarInternal.main = {}));
     var changer;
     (function (changer) {
+        changer.makeEvent = function (myDom, data) {
+            if (data["var"] !== undefined && data["var"] !== null) {
+                if (data["var"]["onclick"] !== undefined)
+                    myDom["onclick"] = data["var"]["onclick"];
+                if (data["var"]["ondblclick"] !== undefined)
+                    myDom["ondblclick"] = data["var"]["ondblclick"];
+                if (data["var"]["onmousemove"] !== undefined)
+                    myDom["onmousemove"] = data["var"]["onmousemove"];
+                if (data["var"]["onmouseout"] !== undefined)
+                    myDom["onmouseout"] = data["var"]["onmouseout"];
+                if (data["var"]["onmouseover"] !== undefined)
+                    myDom["onmouseover"] = data["var"]["onmouseover"];
+                if (data["var"]["onmouseup"] !== undefined)
+                    myDom["onmouseup"] = data["var"]["onmouseup"];
+                if (data["var"]["onwheel"] !== undefined)
+                    myDom["onwheel"] = data["var"]["onwheel"];
+                if (data["var"]["ondrag"] !== undefined)
+                    myDom["ondrag"] = data["var"]["ondrag"];
+                if (data["var"]["ondragend"] !== undefined)
+                    myDom["ondragend"] = data["var"]["ondragend"];
+                if (data["var"]["ondragenter"] !== undefined)
+                    myDom["ondragenter"] = data["var"]["ondragenter"];
+                if (data["var"]["ondragleave"] !== undefined)
+                    myDom["ondragleave"] = data["var"]["ondragleave"];
+                if (data["var"]["ondragover"] !== undefined)
+                    myDom["ondragover"] = data["var"]["ondragover"];
+                if (data["var"]["ondragstart"] !== undefined)
+                    myDom["ondragstart"] = data["var"]["ondragstart"];
+                if (data["var"]["ondrop"] !== undefined)
+                    myDom["ondrop"] = data["var"]["ondrop"];
+                if (data["var"]["onscroll"] !== undefined)
+                    myDom["onscroll"] = data["var"]["onscroll"];
+                if (data["var"]["oncopy"] !== undefined)
+                    myDom["oncopy"] = data["var"]["oncopy"];
+                if (data["var"]["oncut"] !== undefined)
+                    myDom["oncut"] = data["var"]["oncut"];
+                if (data["var"]["onpaste"] !== undefined)
+                    myDom["onpaste"] = data["var"]["onpaste"];
+                myDom.style.display = "inline-block";
+            }
+            return myDom;
+        };
         changer.make = function (data) {
             if (data.tagName === "var-text")
                 return document.createTextNode(data.value);
             else {
-                var myDom_1 = document.createElement(data.tagName);
+                var myDom_1 = changer.makeEvent(document.createElement(data.tagName), data);
                 data.attributesList.map(function (element) {
                     myDom_1.setAttribute(element.attributeName, element.value);
                 });
@@ -205,34 +252,13 @@ var VarInternal;
                 if (element.value !== ((_a = lastAttr.find(function (e) { return e.attributeName === element.attributeName; })) === null || _a === void 0 ? void 0 : _a.value))
                     target.setAttribute(element.attributeName, element.value);
             });
-            //del
+            // del
             lastAttr.map(function (element) {
                 if (nowAttr.find(function (e) { return e.attributeName === element.attributeName; }) == undefined)
                     target.removeAttribute(element.attributeName);
             });
         };
     })(changer = VarInternal.changer || (VarInternal.changer = {}));
-    var varManage;
-    (function (varManage) {
-        varManage.compile = function (vars) {
-            var newVars = {};
-            for (var elementName in vars) {
-                var newElement = { name: "", value: Var.text("none") };
-                var element = { name: elementName, value: vars[elementName] };
-                if (!Array.isArray(element.value))
-                    element.value = [element.value];
-                newElement.name = element.name;
-                newElement.value = Var.make.apply(Var, __spreadArray(["variable", []], element.value.map(function (v) {
-                    if (v instanceof Parser.VirtualDom)
-                        return v;
-                    else
-                        return Var.text(v);
-                }), false));
-                newVars[newElement.name] = newElement.value;
-            }
-            return newVars;
-        };
-    })(varManage = VarInternal.varManage || (VarInternal.varManage = {}));
     var detecter;
     (function (detecter) {
         detecter.getState = function (target) {
@@ -253,13 +279,16 @@ var VarInternal;
         detecter.excute = function (target, excFir) {
             var myVar = target["var"];
             myVar = detecter.getState(target);
-            if (excFir)
+            if (excFir) {
                 myVar.myThis = myVar;
+                myVar.innerHtml = target.childList;
+            }
             if (excFir && myVar.Start !== undefined)
                 myVar.Start();
             if (myVar.Update !== undefined)
                 myVar.Update();
-            var childList = myVar.Render().childList;
+            var childList = [];
+            childList = myVar.Render().childList;
             childList = childList.map(function (element) { return detecter.subVar(element); });
             return new Parser.VirtualDom(target.tagName, target.attributesList, childList, target.value, target.key, myVar);
         };

@@ -185,7 +185,7 @@ export namespace jsx {
                         }
 
                         nowTokens.pop();
-                        myTokens.push(new parser.Token(parser.TokenType.command, makeJsx(nowTokens)));
+                        myTokens.push(new parser.Token(parser.TokenType.command, `((myThis)=>(()=>(${makeJsx(nowTokens)})))(this)`));
                     }
                     else if (tokens[i].type === parser.TokenType.bb_end)
                         bb.pop();
@@ -241,7 +241,7 @@ export namespace jsx {
     }
 
     const makeJs_change = (value: string) => {
-        return `${setting.chageMaker}(${value})`;
+        return `${setting.chageMaker}(((myThis)=>(${value}))(this))`;
     }
 
     const makeJs_child = (tokens: Array<parser.Token>, myDom: Dom): string => {
@@ -263,7 +263,7 @@ export namespace jsx {
             else if (i < myDom.endIndex.startIndex && tokens[i].type === parser.getType(`[`)) {
                 if (isVar.length === 0) {
                     if (makeJs_text(nowText.map(element => element.value).join(``)) !== ``)
-                        returnTokens.push(new parser.Token(parser.TokenType.command, makeJs_text(nowText.map(element => element.value).join(``))));
+                        returnTokens.push(new parser.Token(parser.TokenType.command, parser.makeCode(nowText)));
 
                     nowText = [];
                 }
@@ -273,7 +273,7 @@ export namespace jsx {
             else if ((nowDom_index < myDom.child.length && i === myDom.child[nowDom_index].startIndex.startIndex)) {
                 if (nowText.filter(text => text.type === parser.TokenType.command).length !== 0) {
                     if (makeJs_text(nowText.map(element => element.value).join(``)) !== ``)
-                        returnTokens.push(new parser.Token(parser.TokenType.command, makeJs_text(nowText.map(element => element.value).join(``))));
+                        returnTokens.push(new parser.Token(parser.TokenType.command, makeJs_text(parser.makeCode(nowText))));
                 }
                 nowText = [];
 
@@ -287,7 +287,7 @@ export namespace jsx {
 
         if (nowText.filter(text => text.type === parser.TokenType.command).length !== 0)
             if (makeJs_text(nowText.map(element => element.value).join(``)) !== ``)
-                returnTokens.push(new parser.Token(parser.TokenType.command, makeJs_text(nowText.map(element => element.value).join(``))));
+                returnTokens.push(new parser.Token(parser.TokenType.command, makeJs_text(parser.makeCode(nowText))));
 
         return returnTokens.map(element => element.value).join(`,`);
     }

@@ -13,7 +13,12 @@ namespace Var {
     }
 
     export const change = (value: any): VarInternal.Parser.VirtualDom => {
-        return VarInternal.varManage.compile([value])[0];
+        if (Array.isArray(value) && value[0] instanceof VarInternal.Parser.VirtualDom)
+            return Var.make(`variable`, [], ...value);
+        else if (value instanceof VarInternal.Parser.VirtualDom)
+            return Var.make(`variable`, [], value);
+        else
+            return Var.make(`variable`, [], Var.text(value));
     }
 }
 
@@ -144,7 +149,7 @@ namespace VarInternal {
             const childList = [];
 
             for (const child of parent.childNodes)
-                if (child.nodeValue === null || Parser.parseText(<string>child.nodeValue) !== ``)
+                if (child.nodeValue === null || Parser.parseText(child.nodeValue as string) !== ``)
                     childList.push(child);
 
             return childList;
@@ -160,12 +165,12 @@ namespace VarInternal {
 
         export const init = (): void => {
             // start
-            console.log(`Var.js`);
 
             firstData = Parser.parse(Parser.getHtml(), 0);
 
             lastData = firstData;
             nowData = firstData;
+            console.log(`Var.js`);
         }
 
         export const detectStart = (time: number): void => {
@@ -187,11 +192,58 @@ namespace VarInternal {
     }
 
     export namespace changer {
+        export const makeEvent = (myDom: HTMLElement, data: Parser.VirtualDom): HTMLElement => {
+            if (data.var !== undefined && data.var !== null) {
+                if (data.var[`onclick`] !== undefined)
+                    myDom[`onclick`] = data.var[`onclick`];
+                if (data.var[`ondblclick`] !== undefined)
+                    myDom[`ondblclick`] = data.var[`ondblclick`];
+                if (data.var[`onmousemove`] !== undefined)
+                    myDom[`onmousemove`] = data.var[`onmousemove`];
+                if (data.var[`onmouseout`] !== undefined)
+                    myDom[`onmouseout`] = data.var[`onmouseout`];
+                if (data.var[`onmouseover`] !== undefined)
+                    myDom[`onmouseover`] = data.var[`onmouseover`];
+                if (data.var[`onmouseup`] !== undefined)
+                    myDom[`onmouseup`] = data.var[`onmouseup`];
+                if (data.var[`onwheel`] !== undefined)
+                    myDom[`onwheel`] = data.var[`onwheel`];
+
+                if (data.var[`ondrag`] !== undefined)
+                    myDom[`ondrag`] = data.var[`ondrag`];
+                if (data.var[`ondragend`] !== undefined)
+                    myDom[`ondragend`] = data.var[`ondragend`];
+                if (data.var[`ondragenter`] !== undefined)
+                    myDom[`ondragenter`] = data.var[`ondragenter`];
+                if (data.var[`ondragleave`] !== undefined)
+                    myDom[`ondragleave`] = data.var[`ondragleave`];
+                if (data.var[`ondragover`] !== undefined)
+                    myDom[`ondragover`] = data.var[`ondragover`];
+                if (data.var[`ondragstart`] !== undefined)
+                    myDom[`ondragstart`] = data.var[`ondragstart`];
+                if (data.var[`ondrop`] !== undefined)
+                    myDom[`ondrop`] = data.var[`ondrop`];
+                if (data.var[`onscroll`] !== undefined)
+                    myDom[`onscroll`] = data.var[`onscroll`];
+
+                if (data.var[`oncopy`] !== undefined)
+                    myDom[`oncopy`] = data.var[`oncopy`];
+                if (data.var[`oncut`] !== undefined)
+                    myDom[`oncut`] = data.var[`oncut`];
+                if (data.var[`onpaste`] !== undefined)
+                    myDom[`onpaste`] = data.var[`onpaste`];
+
+                myDom.style.display = `inline-block`;
+            }
+
+            return myDom;
+        }
+
         export const make = (data: Parser.VirtualDom): HTMLElement | Text => {
             if (data.tagName === `var-text`)
                 return document.createTextNode(data.value);
             else {
-                const myDom: HTMLElement = document.createElement(data.tagName);
+                const myDom: HTMLElement = makeEvent(document.createElement(data.tagName), data);
 
                 data.attributesList.map(element => {
                     myDom.setAttribute(element.attributeName, element.value);
@@ -225,35 +277,11 @@ namespace VarInternal {
                     target.setAttribute(element.attributeName, element.value);
             });
 
-            //del
+            // del
             lastAttr.map(element => {
                 if (nowAttr.find(e => e.attributeName === element.attributeName) == undefined)
                     target.removeAttribute(element.attributeName);
             })
-        }
-    }
-
-    export namespace varManage {
-        export const compile = (vars: any): any => {
-            const newVars: any = {};
-            for (const elementName in vars) {
-                let newElement = { name: "", value: Var.text("none") };
-                const element = { name: elementName, value: vars[elementName] };
-                if (!Array.isArray(element.value))
-                    element.value = [element.value];
-
-                newElement.name = element.name;
-                newElement.value = Var.make(`variable`, [], ...element.value.map(v => {
-                    if (v instanceof Parser.VirtualDom)
-                        return v;
-                    else
-                        return Var.text(v);
-                }));
-
-                newVars[newElement.name] = newElement.value;
-            }
-
-            return newVars;
         }
     }
 
@@ -277,15 +305,18 @@ namespace VarInternal {
             let myVar = target.var;
             myVar = getState(target);
 
-            if (excFir)
+            if (excFir) {
                 myVar.myThis = myVar;
+                myVar.innerHtml = target.childList;
+            }
             if (excFir && myVar.Start !== undefined)
                 myVar.Start();
 
             if (myVar.Update !== undefined)
                 myVar.Update();
 
-            let childList: Array<any> = myVar.Render().childList;
+            let childList: Array<Parser.VirtualDom> = [];
+            childList = myVar.Render().childList;
             childList = childList.map(element => subVar(element));
 
             return new Parser.VirtualDom(target.tagName, target.attributesList, childList, target.value, target.key, myVar);
