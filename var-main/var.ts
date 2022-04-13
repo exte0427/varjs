@@ -194,44 +194,12 @@ namespace VarInternal {
     export namespace changer {
         export const makeEvent = (myDom: HTMLElement, data: Parser.VirtualDom): HTMLElement => {
             if (data.var !== undefined && data.var !== null) {
-                if (data.var[`onclick`] !== undefined)
-                    myDom[`onclick`] = data.var[`onclick`];
-                if (data.var[`ondblclick`] !== undefined)
-                    myDom[`ondblclick`] = data.var[`ondblclick`];
-                if (data.var[`onmousemove`] !== undefined)
-                    myDom[`onmousemove`] = data.var[`onmousemove`];
-                if (data.var[`onmouseout`] !== undefined)
-                    myDom[`onmouseout`] = data.var[`onmouseout`];
-                if (data.var[`onmouseover`] !== undefined)
-                    myDom[`onmouseover`] = data.var[`onmouseover`];
-                if (data.var[`onmouseup`] !== undefined)
-                    myDom[`onmouseup`] = data.var[`onmouseup`];
-                if (data.var[`onwheel`] !== undefined)
-                    myDom[`onwheel`] = data.var[`onwheel`];
-
-                if (data.var[`ondrag`] !== undefined)
-                    myDom[`ondrag`] = data.var[`ondrag`];
-                if (data.var[`ondragend`] !== undefined)
-                    myDom[`ondragend`] = data.var[`ondragend`];
-                if (data.var[`ondragenter`] !== undefined)
-                    myDom[`ondragenter`] = data.var[`ondragenter`];
-                if (data.var[`ondragleave`] !== undefined)
-                    myDom[`ondragleave`] = data.var[`ondragleave`];
-                if (data.var[`ondragover`] !== undefined)
-                    myDom[`ondragover`] = data.var[`ondragover`];
-                if (data.var[`ondragstart`] !== undefined)
-                    myDom[`ondragstart`] = data.var[`ondragstart`];
-                if (data.var[`ondrop`] !== undefined)
-                    myDom[`ondrop`] = data.var[`ondrop`];
-                if (data.var[`onscroll`] !== undefined)
-                    myDom[`onscroll`] = data.var[`onscroll`];
-
-                if (data.var[`oncopy`] !== undefined)
-                    myDom[`oncopy`] = data.var[`oncopy`];
-                if (data.var[`oncut`] !== undefined)
-                    myDom[`oncut`] = data.var[`oncut`];
-                if (data.var[`onpaste`] !== undefined)
-                    myDom[`onpaste`] = data.var[`onpaste`];
+                const eventList = [`onclick`, `ondblclick`, `onmousemove`, `onmouseout`, `onmouseover`, `onmouseup`, `onwheel`, `ondrag`, `ondragend`, `ondragenter`, `ondragleave`, `ondragover`, `ondragstart`
+                    `ondrop`, `onscroll`, `oncopy`, `oncut`, `onpaste`, `onpaste`];
+                eventList.map(e => {
+                    if (data.var[e] !== undefined)
+                        myDom[e] = ((thisDom) => (() => { thisDom[`is_${e}`] = true; }))(myDom);
+                });
 
                 myDom.style.display = `inline-block`;
             }
@@ -240,8 +208,12 @@ namespace VarInternal {
         }
 
         export const make = (data: Parser.VirtualDom): HTMLElement | Text => {
-            if (data.tagName === `var-text`)
-                return document.createTextNode(data.value);
+            if (data.tagName === `var-text`) {
+                const myDom = document.createTextNode(data.value);
+
+                data.var.thisElement = myDom;
+                return myDom;
+            }
             else {
                 const myDom: HTMLElement = makeEvent(document.createElement(data.tagName), data);
 
@@ -253,6 +225,7 @@ namespace VarInternal {
                     myDom.append(make(element));
                 });
 
+                data.var.thisElement = myDom;
                 return myDom;
             }
         }
